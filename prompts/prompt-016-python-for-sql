@@ -9,19 +9,18 @@ pip3 install --quiet pyodbc azure-identity
 # Run the Python script
 python3 run-sql.py
 
-also create a file called script.sql and put the following changing mid-AppModAssist to the user assigned managed identity you created earlier or leave as is if 
-you were not asked ot create any user assigned managed identity:
+also create a file called script.sql and put the following changing MANAGED-IDENTITY to the user assigned managed identity you created earlier 
 
 # Drop and recreate the managed identity user with correct SID
 sql = """
-IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'mid-AppModAssist')
+IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'MANAGED-IDENTITY')
 BEGIN
-    DROP USER [mid-AppModAssist];
+    DROP USER [MANAGED-IDENTITY];
 END
 
-CREATE USER [mid-AppModAssist] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_datareader ADD MEMBER [mid-AppModAssist];
-ALTER ROLE db_datawriter ADD MEMBER [mid-AppModAssist];
+CREATE USER [MANAGED-IDENTITY] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_datareader ADD MEMBER [MANAGED-IDENTITY];
+ALTER ROLE db_datawriter ADD MEMBER [MANAGED-IDENTITY];
 """
 
 Python file contents:
