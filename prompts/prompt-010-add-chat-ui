@@ -1,4 +1,6 @@
-Create a chat interface in a new folder called "chatui" that lets users interact with the database using natural language.
+Create a chat interface as a Razor Page within the main application (src/ExpenseManagement/Pages/Chat.cshtml) that lets users interact with the database using natural language.
+
+Do NOT create a separate "chatui" folder - the chat should be integrated into the existing ASP.NET application.
 
 The chat should:
 - Connect to the Azure GenAI resources (OpenAI and AI Search) configured earlier
