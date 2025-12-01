@@ -19,6 +19,7 @@ Configure the person deploying as the SQL server administrator:
 - Use Entra ID (Azure AD) authentication
 - Include their Object ID and User Principal Name
 - The deployment script will retrieve these automatically from Azure CLI
+- Support both User (interactive) and Application (Service Principal for CI/CD) principal types via an `adminPrincipalType` parameter
 
 ### Managed Identity Access
 

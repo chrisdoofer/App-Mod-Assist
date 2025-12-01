@@ -1,0 +1,78 @@
+## GitHub Actions CI/CD Support
+
+The deployment scripts must support BOTH local interactive deployment AND automated CI/CD via GitHub Actions.
+
+### CI/CD Detection
+
+The PowerShell deployment script (`deploy-infra/deploy.ps1`) must detect when running in CI/CD:
+
+```powershell
+$IsCI = $env:GITHUB_ACTIONS -eq "true" -or $env:TF_BUILD -eq "true" -or $env:CI -eq "true"
+```
+
+### Authentication Differences
+
+**Local (Interactive) Mode:**
+- Use `az ad signed-in-user show` to get the current user's Object ID and UPN
+- Set `adminPrincipalType = "User"` for SQL Server admin
+
+**CI/CD Mode (GitHub Actions with OIDC):**
+- Use `$env:AZURE_CLIENT_ID` to get the Service Principal's Application ID
+- Use `az ad sp show --id $servicePrincipalClientId` to get the SP's Object ID and display name
+- Set `adminPrincipalType = "Application"` for SQL Server admin
+- Never call `az ad signed-in-user show` - it will fail with OIDC authentication
+
+### Bicep Parameter Support
+
+The `azure-sql.bicep` module must accept an `adminPrincipalType` parameter:
+
+```bicep
+@allowed(['User', 'Application'])
+param adminPrincipalType string = 'User'
+```
+
+And use it in the SQL Server administrators configuration:
+
+```bicep
+principalType: adminPrincipalType
+```
+
+The `main.bicep` must pass this parameter through from the deployment script.
+
+### GitHub Actions Workflow
+
+A workflow file at `.github/workflows/deploy.yml` should:
+
+1. Use OIDC federation for authentication (no secrets):
+   ```yaml
+   permissions:
+     id-token: write
+     contents: read
+   ```
+
+2. Use `azure/login@v2` with OIDC:
+   ```yaml
+   - uses: azure/login@v2
+     with:
+       client-id: ${{ vars.AZURE_CLIENT_ID }}
+       tenant-id: ${{ vars.AZURE_TENANT_ID }}
+       subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+   ```
+
+3. Install go-sqlcmd directly from GitHub releases (not apt repository):
+   ```yaml
+   - run: |
+       curl -sSL -o sqlcmd.tar.bz2 https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2
+       sudo tar -xjf sqlcmd.tar.bz2 -C /usr/local/bin
+   ```
+
+4. Call the same PowerShell deployment scripts used locally
+
+### Setup Documentation
+
+Include a `.github/CICD-SETUP.md` file with PowerShell instructions for:
+
+1. Creating a Service Principal with OIDC federation
+2. Assigning Contributor role to the subscription
+3. Creating federated credentials for the repository
+4. Configuring GitHub repository variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID)
